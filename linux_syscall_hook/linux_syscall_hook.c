@@ -1,59 +1,40 @@
-#include <linux/module.h>
-#include <linux/init.h>
 #include <linux/kernel.h>
-#include <asm/desc.h>
-#include <asm/desc_defs.h>
-#include <asm/pgtable.h>
-#include <linux/unistd.h>
-#include <linux/fs.h>
+#include <linux/init.h>
+#include <linux/module.h>
 #include <linux/cdev.h>
+#include <linux/fs.h>
+#include <asm/errno.h>
+#include <linux/unistd.h>
 
-typedef long (*sys_call_ptr_t)(void);
-typedef asmlinkage long (* orig_read_t)(unsigned int fd, char __user *buf, size_t count);
+ssize_t syscall_hook_read (struct file * filp, char __user * buf, size_t count, loff_t * offset);
+ssize_t syscall_hook_write (struct file * filp, const char __user * buf, size_t count, loff_t * offset);
+int syscall_hook_open (struct inode * node, struct file * filp);
+int syscall_hook_release (struct inode * node , struct file * filp);
+asmlinkage long sys_read_hooked(unsigned int fd, char __user *buf, size_t count);
 
-orig_read_t orig_read = 0;
+struct cdev * my_cdev = NULL;
+dev_t dev_num;
+struct file_operations fops = {
+    .owner = THIS_MODULE,
+    .read = syscall_hook_read,
+    .write = syscall_hook_write,
+    .open = syscall_hook_open,
+    .release = syscall_hook_release,
+};
 
-// memory protection shinanigans
-unsigned int level;
-pte_t *pte;
 
-unsigned long * _sys_call_table;
 
-void get_idt_table(gate_desc ** idt_table_pointer)
+typedef long (* func_pointer_type)(unsigned int fd, char __user *buf, size_t count);
+
+func_pointer_type * __sys_call_table;
+
+func_pointer_type orignal_sys_read;
+
+asmlinkage long sys_read_hooked(unsigned int fd, char __user *buf, size_t count)
 {
-    struct desc_ptr idt;
-    gate_desc * each_vector;
-    unsigned long i;
-    int idt_index = 0;
-
-    __asm__("sidt %0":"=m"(idt));
-
-    printk(KERN_INFO "IDT starting at %p, idt size = %x, single ldt_desc size = %d\n",
-           idt.address, idt.size, sizeof(ldt_desc));
-
-    for(i = idt.address; i < idt.address + idt.size; i+=sizeof (ldt_desc)){
-        each_vector = (gate_desc *)i;
-
-        printk(KERN_INFO "idt index = %d, segment = %x, offset = 0x%08x 0x%04x 0x%04x\n",
-               idt_index, each_vector->segment,
-               each_vector->offset_high,
-               each_vector->offset_middle,
-               each_vector->offset_low);
-        idt_index++;
-    }
-
-    *idt_table_pointer = idt.address;
-
+    printk(KERN_INFO "enter sys_read_hooked\n");
+    return orignal_sys_read(fd, buf, count);
 }
-
-
-asmlinkage long hooked_read(unsigned int fd, char __user *buf, size_t count)
-{
-    printk(KERN_INFO "enter my hooked read\n");
-
-    return orig_read(fd, buf, count);
-}
-
 
 uint close_cr0(){
 
@@ -90,106 +71,64 @@ void open_cr0(uint oldVar){
 }
 
 
+
 ssize_t syscall_hook_read (struct file * filp, char __user * buf, size_t count, loff_t * offset)
 {
     return count;
 }
 ssize_t syscall_hook_write (struct file * filp, const char __user * buf, size_t count, loff_t * offset)
 {
+    /*
+     *  在这个里面 做  sys_call_table  hook
+     *  2.6.32-696.el6.x86_64
+     *  ffffffff816005c0 R sys_call_table
+     *  在 Module.symvers 中 未发现有导出， 所以此 符号不 导出
+     ***************************************************************************************/
+    uint cr0_value;
+
+    __sys_call_table = 0xffffffff816005c0;
+
+    __asm__("cli;\n\t");
+    cr0_value = close_cr0();
+
+    orignal_sys_read = __sys_call_table[__NR_read];
+    __sys_call_table[__NR_read] = &sys_read_hooked;
+
+    open_cr0(cr0_value);
+    __asm__("sti;\n\t");
+
     return count;
 }
 int syscall_hook_open (struct inode * node, struct file * filp)
 {
     filp->private_data = node->i_cdev;
+    return 0;
 }
-int syscall_hook_release (struct inode * node, struct file * filp)
+int syscall_hook_release (struct inode * node , struct file * filp)
 {
+    filp->private_data = NULL;
     return 0;
 }
 
-dev_t dev_num;
-
-struct file_operations fops = {
-    .owner = THIS_MODULE,
-    .read = syscall_hook_read,
-    .write = syscall_hook_write,
-    .open = syscall_hook_open,
-    .release = syscall_hook_release,
-};
-
-struct cdev * my_cdev = NULL;
 
 static int __init syscall_hook_init(void)
 {
-//    gate_desc * idt_table;
-//    gate_desc * system_call_gate;           // 0x80  中断 描述 地址
-
-//    unsigned long system_call_off;
-//    unsigned char * system_call_addr;       // 中断例程地址
-//    int lowoff;
-    int oldval;
     int ret;
-
-//    printk(KERN_INFO "syscall hook init\n");
-
-//    get_idt_table(&idt_table);
-
-//    system_call_gate = &idt_table[0x80];
-
-////    system_call_off = (system_call_gate->offset_high << 32 ) |
-////            (system_call_gate->offset_middle << 16) |
-////            (system_call_gate->offset_low);
-//    system_call_off = system_call_gate;
-
-//    system_call_off = system_call_off << 32;
-
-//    lowoff = system_call_gate->offset_middle;
-
-//    lowoff = (lowoff << 16) + system_call_gate->offset_low;
-
-//    system_call_off = system_call_off | lowoff;
-
-
-//    system_call_addr = (unsigned char *)system_call_off;
-
-//    printk(KERN_INFO "0x80 interrupt addr = %p, sizeof(unsigned long) = %d\n",
-//           system_call_addr,
-//           sizeof (unsigned long));
-
-
-      // sys_call_table的 查找还不确定
-
-//    _sys_call_table = 0xffffffff815925e0;
-
-//    orig_read = (orig_read_t)(_sys_call_table[__NR_read]);
-
-//    oldval = close_cr0();
-
-////    pte = lookup_address((unsigned long)_sys_call_table, &level);
-
-////    // change PTE to allow writing
-////    set_pte_atomic(pte, pte_mkwrite(*pte));
-
-//    _sys_call_table[__NR_read] = hooked_read;
-
-    open_cr0(oldval);
-
-    printk(KERN_INFO "hooked install\n");
-
-    //  添加一 段  字符设备 代码  用来 控制
+    printk(KERN_INFO "syscall_hook_init\n");
 
     ret = alloc_chrdev_region(&dev_num, 0, 1, "syscall_hook");
 
     if(ret){
         printk(KERN_INFO "alloc chrdev region failed\n");
-        return ret;
+        goto error;
     }
 
     my_cdev = cdev_alloc();
 
     if(my_cdev == NULL){
-        printk(KERN_INFO "cdev alloc failed\n");
-        return -ENOMEM;
+        printk(KERN_INFO "cdev alloc failde\n");
+        ret = -ENOMEM;
+        goto error1;
     }
 
     cdev_init(my_cdev, &fops);
@@ -198,34 +137,38 @@ static int __init syscall_hook_init(void)
 
     if(ret){
         printk(KERN_INFO "cdev add failed\n");
-        return ret;
+        goto error1;
     }
 
+
+
     return 0;
+
+    error1:
+    kfree(my_cdev);
+    unregister_chrdev_region(dev_num, 1);
+
+    error:
+    return ret;
 }
 
 static void __exit syscall_hook_exit(void)
 {
-    int oldval;
-    printk(KERN_INFO "syscall hook exit\n");
-
-
-    cdev_del(my_cdev);
+    uint cr0_value;
+    kfree(my_cdev);
     unregister_chrdev_region(dev_num, 1);
 
 
-//    if(orig_read != NULL){
+    __asm__("cli;\n\t");
+    cr0_value = close_cr0();
 
-//        oldval = close_cr0();
+    __sys_call_table[__NR_read] = orignal_sys_read;
 
-//        _sys_call_table[__NR_read] = orig_read;
+    open_cr0(cr0_value);
+    __asm__("sti;\n\t");
 
-////        set_pte_atomic(pte, pte_clear_flags(*pte, _PAGE_RW));
-
-//        open_cr0(oldval);
-//    }
+    printk(KERN_INFO "syscall_hook_exit\n");
 }
-
 
 module_init(syscall_hook_init);
 module_exit(syscall_hook_exit);

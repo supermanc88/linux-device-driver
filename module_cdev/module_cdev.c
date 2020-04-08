@@ -45,7 +45,7 @@ int module_cdev_release (struct inode * node , struct file * filp)
 static int __init module_cdev_init(void)
 {
     int ret;
-    printk(KERN_INFO "module cdev init\n");
+    printk(KERN_INFO "module_cdev_init\n");
 
     ret = alloc_chrdev_region(&dev_num, 0, 1, "module_cdev");
 
@@ -86,7 +86,7 @@ static void __exit module_cdev_exit(void)
 {
     kfree(my_cdev);
     unregister_chrdev_region(dev_num, 1);
-    printk(KERN_INFO "module cdev exit\n");
+    printk(KERN_INFO "module_cdev_exit\n");
 }
 
 module_init(module_cdev_init);
