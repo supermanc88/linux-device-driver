@@ -45,6 +45,58 @@ ssize_t detect_inline_hook_input_event_read (struct file * filp, char __user * b
 {
     return count;
 }
+
+uint close_cr0(){
+
+    uint cr0 =0;
+
+    uint ret = 0;
+
+    __asm__ __volatile__("movq  %%cr0, %%rax"
+                        :"=a"(cr0)
+                        );
+
+    ret = cr0;
+
+    cr0 &= 0xfffeffff;
+
+    __asm__ __volatile__( "movq %%rax, %%cr0"
+                        :
+                        :"a"(cr0)
+                        );
+
+    return ret;
+
+}
+
+void open_cr0(uint oldVar){
+
+        __asm__ __volatile__("movq %%rax, %%cr0"
+
+                :
+
+                :"a"(oldVar)
+
+        );
+}
+
+void restore_inline_hook_input_event(void)
+{
+    uint old_value;
+    printk(KERN_INFO "enter restore_inline_hook_input_event\n");
+
+    __asm__("cli;");
+
+    old_value = close_cr0();
+
+
+
+    open_cr0(old_value);
+
+    __asm__("sti;");
+
+}
+
 ssize_t detect_inline_hook_input_event_write (struct file * filp, const char __user * buf, size_t count, loff_t * offset)
 {
     unsigned char * input_event_addr = &input_event;
@@ -58,12 +110,16 @@ ssize_t detect_inline_hook_input_event_write (struct file * filp, const char __u
 
 
     // compare tow array content
+    //  找个 东西 记录
 
     for(i=0; i<145; i++){
         if(signature_code[i] != current_input_event_code[i]){
             printk(KERN_INFO "have a inline hook at 0x%p\n", (input_event_addr + i));
         }
     }
+
+
+    restore_inline_hook_input_event();
 
     return count;
 }
