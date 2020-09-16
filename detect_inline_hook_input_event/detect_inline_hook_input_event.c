@@ -4,6 +4,7 @@
 #include <linux/cdev.h>
 #include <linux/fs.h>
 #include <asm/errno.h>
+#include <linux/types.h>
 
 #include <linux/input.h>
 
