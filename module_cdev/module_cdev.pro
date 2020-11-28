@@ -10,3 +10,6 @@ QMAKE_CFLAGS += -IE:\\LinuxKernel\\linux-2.6.32.69\\include
 
 SOURCES += \
     module_cdev.c
+
+DISTFILES += \
+    Makefile
