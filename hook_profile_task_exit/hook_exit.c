@@ -50,6 +50,7 @@ int replace_kernel_func(unsigned long func_handler, unsigned long ori_func, unsi
             printk("%s replace_kernel_func addr = %d\n", __func__, do_exit_addr);
         }
 
+        do_exit_addr++;
     }while(i++ < 100);
 
 
