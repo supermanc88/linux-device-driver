@@ -22,23 +22,23 @@ void my_profile_task_exit(struct task_struct *task)
 
 int replace_kernel_func(unsigned long func_handler, unsigned long ori_func, unsigned long my_func)
 {
-    unsigned char *do_exit_addr = (unsigned char *)func_handler + 5;
+    unsigned char *temp_addr = (unsigned char *)func_handler + 5;
 
     int i = 0;
 
     do {
 
-        if (*do_exit_addr == 0xe8) {
-            unsigned int *relation_offset = (unsigned int *)(do_exit_addr + 1);
+        if (*temp_addr == 0xe8) {
+            unsigned int *relation_offset = (unsigned int *)(temp_addr + 1);
 
-            if ((unsigned long)do_exit_addr + 5 + *relation_offset == ori_func) {
+            if ((unsigned long)temp_addr + 5 + *relation_offset == ori_func) {
 
                 // 这里就是对比一下 看找到的地址是不是和传入的原地址相同，保险
 
                 __asm__("cli;");
                 write_cr0(read_cr0() & (~0x10000));
 
-                *relation_offset = my_func - (unsigned long)do_exit_addr - 5;
+                *relation_offset = my_func - (unsigned long)temp_addr - 5;
 
                 write_cr0(read_cr0() | 0x10000);
                 __asm__("sti;");
@@ -47,10 +47,10 @@ int replace_kernel_func(unsigned long func_handler, unsigned long ori_func, unsi
 
                 return 0;
             }
-            printk("%s replace_kernel_func addr = %d\n", __func__, do_exit_addr);
+            printk("%s replace_kernel_func addr = %d\n", __func__, temp_addr);
         }
 
-        do_exit_addr++;
+        temp_addr++;
     }while(i++ < 100);
 
 
