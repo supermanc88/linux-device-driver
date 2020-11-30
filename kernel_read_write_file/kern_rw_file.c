@@ -3,9 +3,43 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
+#include <asm/uaccess.h>
+#include <asm/processor.h>
 
 
 #define TEST_FILE_PATH      "/root/test.txt"
+
+
+char *read_line(char *buf, int buf_len, struct file *filp)
+{
+    int ret, i = 0;
+    mm_segment_t old_fs;
+
+    old_fs = get_fs();
+    set_fs (KERNEL_DS);
+
+    ret = filp->f_op->read(filp, buf, buf_len, &(filp->f_pos));
+
+    set_fs (old_fs);
+
+    if (ret <= 0)
+        return NULL;
+
+    while(buf[i++] != '\n' && i < ret);
+
+
+    if (i < ret) {
+        // 更新文件位置
+        filp->f_pos += i - ret;
+    }
+
+    if (i < buf_len) {
+        buf[i] = 0;
+    }
+
+    return buf;
+}
+
 
 
 static int __init kern_rw_file_init(void)
