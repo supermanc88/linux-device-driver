@@ -7,14 +7,20 @@
 #include <linux/uaccess.h>
 #include <asm/errno.h>
 
+
+/*
+    在linux3.16基础上开发
+*/
+
 #define BUFF_SIZE 4096
+#define CLEAR_DATA 0
 
 ssize_t module_cdev_read (struct file * filp, char __user * buf, size_t count, loff_t * offset);
 ssize_t module_cdev_write (struct file * filp, const char __user * buf, size_t count, loff_t * offset);
 int module_cdev_open (struct inode * node, struct file * filp);
 int module_cdev_release (struct inode * node , struct file * filp);
 loff_t module_cdev_llseek (struct file *filp, loff_t offset, int whence);
-
+int module_cdev_ioctl (struct file *filp, unsigned int cmd, unsigned long arg);
 
 struct cdev * my_cdev = NULL;
 dev_t dev_num;
@@ -29,7 +35,24 @@ struct file_operations fops = {
     .open = module_cdev_open,
     .release = module_cdev_release,
     .llseek = module_cdev_llseek,
+    .unlocked_ioctl = module_cdev_ioctl,
 };
+
+
+int module_cdev_ioctl (struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    char *my_buf = filp->private_data;
+
+    switch (cmd) {
+    case CLEAR_DATA:
+        memset(my_buf, 0, BUFF_SIZE);
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}
 
 
 loff_t module_cdev_llseek (struct file *filp, loff_t offset, int whence)
