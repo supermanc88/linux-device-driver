@@ -5,11 +5,19 @@
 #include <linux/uaccess.h>
 #include <asm/uaccess.h>
 #include <asm/processor.h>
+#include <linux/string.h>
 
 
 #define TEST_FILE_PATH      "/root/test.txt"
 
 
+/**
+ * @brief read_line 后面有\n
+ * @param buf
+ * @param buf_len
+ * @param filp
+ * @return
+ */
 char *read_line(char *buf, int buf_len, struct file *filp)
 {
     int ret, i = 0;
@@ -18,7 +26,7 @@ char *read_line(char *buf, int buf_len, struct file *filp)
     old_fs = get_fs();
     set_fs (KERNEL_DS);
 
-    ret = filp->f_op->read(filp, buf, buf_len, &(filp->f_pos));
+    ret = vfs_read(filp, buf, buf_len, &(filp->f_pos));
 
     set_fs (old_fs);
 
@@ -40,6 +48,40 @@ char *read_line(char *buf, int buf_len, struct file *filp)
     return buf;
 }
 
+char *read_line_without_cr(char *buf, int buf_len, struct file *filp)
+{
+    int ret, i = 0;
+    mm_segment_t old_fs;
+
+    old_fs = get_fs();
+    set_fs (KERNEL_DS);
+
+    ret = vfs_read(filp, buf, buf_len, &(filp->f_pos));
+
+    set_fs (old_fs);
+
+    if (ret <= 0)
+        return NULL;
+
+    while(buf[i++] != '\n' && i < ret);
+
+
+    if (i < ret) {
+        // 更新文件位置
+        filp->f_pos += i - ret;
+    }
+
+    if (i < buf_len) {
+        buf[i] = 0;
+    }
+
+    if (buf[i-1] == '\n') {
+        buf[i-1] = 0;
+    }
+
+    return buf;
+}
+
 
 
 static int __init kern_rw_file_init(void)
@@ -48,6 +90,8 @@ static int __init kern_rw_file_init(void)
     int ret, i;
     char buf[512];
     int offset = 0;
+    char *token;
+    char *cur;
 
     printk(KERN_INFO "%s\n", __func__);
 
@@ -70,18 +114,28 @@ static int __init kern_rw_file_init(void)
         return -EINVAL;
     }
 
-    while (true) {
-       ret = kernel_read(filp, offset, buf, 512);
+//    while (true) {
+//       ret = kernel_read(filp, offset, buf, 512);
 
-       printk(KERN_INFO "%s kernel_read\n", __func__);
+//       printk(KERN_INFO "%s kernel_read\n", __func__);
 
-       if (ret > 0) {
-           offset += ret;
-           for (i = 0; i < ret; i++)
-               printk("%c", buf[i]);
-       } else
-           break;
+//       if (ret > 0) {
+//           offset += ret;
+//           for (i = 0; i < ret; i++)
+//               printk("%c", buf[i]);
+//       } else
+//           break;
 
+//    }
+
+    while (read_line_without_cr(buf, 512, filp)) {
+        printk(KERN_INFO "%s : %s\n", __func__, buf);
+        cur = buf;
+        while ((token = strsep(&cur, ",")) != NULL) {
+            if (!*token)
+                continue;
+            printk(KERN_INFO "%s : %s\n", __func__, token);
+        }
     }
 
     filp_close(filp, NULL);
