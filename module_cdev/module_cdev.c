@@ -5,7 +5,8 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-#include <asm/errno.h>
+//#include <asm/errno.h>
+#include <linux/device.h>               //class_create
 
 
 /*
@@ -13,7 +14,8 @@
 */
 
 #define BUFF_SIZE 4096
-#define CLEAR_DATA 0
+#define MAGIC_NUM           'K'
+#define CLEAR_DATA          _IO(MAGIC_NUM, 0)
 
 ssize_t module_cdev_read (struct file * filp, char __user * buf, size_t count, loff_t * offset);
 ssize_t module_cdev_write (struct file * filp, const char __user * buf, size_t count, loff_t * offset);
