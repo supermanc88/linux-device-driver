@@ -30,6 +30,9 @@ dev_t dev_num;
 char dev_buf[BUFF_SIZE] = {0};
 
 
+struct class *module_class;
+struct device *module_class_device;
+
 struct file_operations fops = {
     .owner = THIS_MODULE,
     .read = module_cdev_read,
@@ -157,6 +160,11 @@ static int __init module_cdev_init(void)
     }
 
 
+    // 在这里自动创建设备节点
+    module_class = class_create(THIS_MODULE, "module_cdev_class");
+    module_class_device = device_create(module_class, NULL, dev_num, NULL, "module_cdev_name");
+
+
     return 0;
 
     error1:
@@ -171,6 +179,10 @@ static void __exit module_cdev_exit(void)
 {
     kfree(my_cdev);
     unregister_chrdev_region(dev_num, 1);
+
+    device_destroy(module_class, dev_num);
+    class_destroy(module_class);
+
     printk(KERN_INFO "module_cdev_exit\n");
 }
 
