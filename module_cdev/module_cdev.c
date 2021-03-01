@@ -8,6 +8,7 @@
 //#include <asm/errno.h>
 #include <linux/device.h>               //class_create
 
+// 相关参考： https://www.cnblogs.com/skywang12345/archive/2013/05/15/driver_class.html
 
 /*
     在linux3.16基础上开发
@@ -161,6 +162,9 @@ static int __init module_cdev_init(void)
 
 
     // 在这里自动创建设备节点
+    // 内核中定义了struct class结构体，一个class结构体类型对应一个类，内核同时提供了class_create函数，可以用它来创建一个类，
+    // 这个类存放于sysfs下面，一旦创建好了这个类，再调用device_create函数在/dev目录下创建相应的设备节点。
+    // 这样，加载模块的时候，用户空间中的udev会自动响应device_create函数，去/sysfs下寻找对应的类，从而创建设备节点。
     module_class = class_create(THIS_MODULE, "module_cdev_class");
     module_class_device = device_create(module_class, NULL, dev_num, NULL, "module_cdev_name");
 
