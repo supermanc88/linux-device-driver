@@ -86,39 +86,36 @@ loff_t module_cdev_llseek (struct file *filp, loff_t offset, int whence)
 
 ssize_t module_cdev_read (struct file * filp, char __user * buf, size_t count, loff_t * offset)
 {
-    unsigned long pos = *offset;
+    printk("%s filp = [%p], buf = [%s], count = [%d], offset = [%d]\n",
+           __func__, filp, buf, count, *offset);
     int rc = 0;
-    unsigned int size = count;
-    char *my_buf = filp->private_data;
+    char * msg_buf = filp->private_data;
 
-    if (copy_to_user(buf, my_buf+pos, size)) {
-        return -EFAULT;
+    if(copy_to_user(buf, msg_buf + *offset, count)) {
+        rc = -EFAULT;
     } else {
-        *offset += size;
-        rc = size;
+        *offset += count;
+        rc = count;
     }
-
     return rc;
 }
+
 ssize_t module_cdev_write (struct file * filp, const char __user * buf, size_t count, loff_t * offset)
 {
-    unsigned long pos = *offset;
+    printk("%s filp = [%p], buf = [%s], count = [%d], offset = [%d]\n",
+            __func__, filp, buf, count, *offset);
     int rc = 0;
-    unsigned int size = count;
-    char *my_buf = filp->private_data;
+    char * msg_buf = filp->private_data;
 
-
-    if (copy_from_user(my_buf+pos, buf, size)) {
-        return -EFAULT;
+    if(copy_from_user(msg_buf + *offset, buf, count)) {
+        rc = -EFAULT;
     } else {
-       *offset += size;
-        rc = size;
+        *offset += count;
+        rc = count;
     }
-
-
-
     return rc;
 }
+
 int module_cdev_open (struct inode * node, struct file * filp)
 {
     filp->private_data = dev_buf;
