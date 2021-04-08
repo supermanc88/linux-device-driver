@@ -2,6 +2,7 @@
 #include <linux/module.h>
 #include <linux/kallsyms.h>
 #include <linux/string.h>
+#include <linux/input.h>
 
 unsigned long hook_addr;
 unsigned long hook_ret_addr;
@@ -9,7 +10,32 @@ unsigned long ra_value;
 
 void modify_current_key(void)
 {
-    printk("%s\n", __func__);
+	unsigned long dev, type, code, value;
+	__asm__ volatile(
+			"move %0, $a0\n\t"
+			:"=r"(dev)
+			);
+	__asm__ volatile(
+			"move %0, $a1\n\t"
+			:"=r"(type)
+			);
+	__asm__ volatile(
+			"move %0, $a2\n\t"
+			:"=r"(code)
+			);
+	__asm__ volatile(
+			"move %0, $a3\n\t"
+			:"=r"(value)
+			);
+    printk("%s dev = [%p], type = [%ld], code = [%ld], value =[%ld]\n", __func__,
+		    dev, type, code, value);
+    if (type == EV_KEY)
+    	code += 1;
+	__asm__ volatile(
+			"move $a2, %0\n\t"
+			:
+			:"r"(code)
+			);
 }
 
 __attribute__ ((naked)) void my_input_handle_event(void)
@@ -17,7 +43,25 @@ __attribute__ ((naked)) void my_input_handle_event(void)
 
     // 调用函数之后，把原来的ra改变了，所以需要保存原来的ra
     __asm__ volatile(
-            "sd $ra, ra_value\n\t"
+            //"sd $ra, ra_value\n\t"
+	    "daddiu $sp,$sp,-136\n\t"
+	    "sd $v0, 0($sp)\n\t"
+	    "sd $v1, 8($sp)\n\t"
+	    "sd $a0, 16($sp)\n\t"
+	    "sd $a1, 24($sp)\n\t"
+	    "sd $a2, 32($sp)\n\t"
+	    "sd $a3, 40($sp)\n\t"
+	    "sd $s0, 48($sp)\n\t"
+	    "sd $s1, 56($sp)\n\t"
+	    "sd $s2, 64($sp)\n\t"
+	    "sd $s3, 72($sp)\n\t"
+	    "sd $s4, 80($sp)\n\t"
+	    "sd $s5, 88($sp)\n\t"
+	    "sd $s6, 96($sp)\n\t"
+	    "sd $s7, 104($sp)\n\t"
+	    "sd $gp, 112($sp)\n\t"
+	    "sd $fp, 120($sp)\n\t"
+	    "sd $ra, 128($sp)\n\t"
             );
     __asm__ volatile(
 //            "dla $v0, modify_current_key\n\t"
@@ -25,13 +69,35 @@ __attribute__ ((naked)) void my_input_handle_event(void)
             "bal modify_current_key\n\t"
             );
     __asm__ volatile(
-            "ld $ra, ra_value\n\t"
+            //"ld $ra, ra_value\n\t"
+	    "ld $v0, 0($sp)\n\t"
+	    "ld $v1, 8($sp)\n\t"
+	    "ld $a0, 16($sp)\n\t"
+	    "ld $a1, 24($sp)\n\t"
+//	    "ld $a2, 32($sp)\n\t"
+	    "ld $a3, 40($sp)\n\t"
+	    "ld $s0, 48($sp)\n\t"
+	    "ld $s1, 56($sp)\n\t"
+	    "ld $s2, 64($sp)\n\t"
+	    "ld $s3, 72($sp)\n\t"
+	    "ld $s4, 80($sp)\n\t"
+	    "ld $s5, 88($sp)\n\t"
+	    "ld $s6, 96($sp)\n\t"
+	    "ld $s7, 104($sp)\n\t"
+	    "ld $gp, 112($sp)\n\t"
+	    "ld $fp, 120($sp)\n\t"
+	    "ld $ra, 128($sp)\n\t"
+	    "daddiu $sp,$sp,136\n\t"
             );
     __asm__ volatile(
-            "daddiu  $sp, -0x50\n\t"
-            "sltiu   $v0, $a1, 0x17\n\t"
-            "sd      $s0, 0x18($sp)\n\t"
-            "swc2    $21, 0x13F($sp)\n\t"
+            // "daddiu  $sp, -0x50\n\t"
+            // "sltiu   $v0, $a1, 0x17\n\t"
+            // "sd      $s0, 0x18($sp)\n\t"
+            // "swc2    $21, 0x13F($sp)\n\t"
+	    "daddiu $sp,$sp,-64\n\t"
+	    "sd $ra,56($sp)\n\t"
+	    "sd $s5,48($sp)\n\t"
+	    "sd $s4,40($sp)\n\t"
             "ld $t0,hook_ret_addr\n\t"
             "jr $t0\n\t"
             );
@@ -76,7 +142,7 @@ static int __init mips_inline_hook_init(void)
     hook_ret_addr = hook_addr + 16;
 
     unsigned long jmp_addr = &my_input_handle_event;
-//    jmp_addr += 12;
+    jmp_addr += 36;
     printk("%s my_input_handle_event addr = 0x%16lx, jmp_addr = 0x%16lx\n", __func__, &my_input_handle_event, jmp_addr);
 
     // 经测试不能使用j xxx的结构，这种结构最大跳转只能256M
@@ -118,8 +184,8 @@ static int __init mips_inline_hook_init(void)
     // 找到一个这样的特征
     // 12 C0 02 3C 56 78 42 64                       li      $v0, 0xFFFFFFFFC0127856
     // 08 00 40 00                                   jr      $v0
-    unsigned char hook_opcodes[16] = {0x00, 0x00, 0x02, 0x3c, 0x00, 0x00, 0x42, 0x64,
-                                      0x08, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00};
+    unsigned char hook_opcodes[16] = {0x00, 0x00, 0x0c, 0x3c, 0x00, 0x00, 0x8c, 0x65,
+                                      0x08, 0x00, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00};
     unsigned short temp;
     temp = (unsigned short )jmp_addr;
     *((unsigned short *)&hook_opcodes[4]) = temp;
