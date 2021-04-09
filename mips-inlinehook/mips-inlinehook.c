@@ -7,9 +7,16 @@
 unsigned long hook_addr;
 unsigned long hook_ret_addr;
 unsigned long ra_value;
+unsigned char ori_opcodes[16] = {0};
 
 void modify_current_key(void)
 {
+    int a,b,c,d;
+    a = 1;
+    b = 2;
+    c = 3;
+    d = 4;
+    printk("%s\n", __func__);
 	unsigned long dev, type, code, value;
 	__asm__ volatile(
 			"move %0, $a0\n\t"
@@ -44,60 +51,90 @@ __attribute__ ((naked)) void my_input_handle_event(void)
     // 调用函数之后，把原来的ra改变了，所以需要保存原来的ra
     __asm__ volatile(
             //"sd $ra, ra_value\n\t"
-	    "daddiu $sp,$sp,-136\n\t"
-	    "sd $v0, 0($sp)\n\t"
-	    "sd $v1, 8($sp)\n\t"
-	    "sd $a0, 16($sp)\n\t"
-	    "sd $a1, 24($sp)\n\t"
-	    "sd $a2, 32($sp)\n\t"
-	    "sd $a3, 40($sp)\n\t"
-	    "sd $s0, 48($sp)\n\t"
-	    "sd $s1, 56($sp)\n\t"
-	    "sd $s2, 64($sp)\n\t"
-	    "sd $s3, 72($sp)\n\t"
-	    "sd $s4, 80($sp)\n\t"
-	    "sd $s5, 88($sp)\n\t"
-	    "sd $s6, 96($sp)\n\t"
-	    "sd $s7, 104($sp)\n\t"
-	    "sd $gp, 112($sp)\n\t"
-	    "sd $fp, 120($sp)\n\t"
-	    "sd $ra, 128($sp)\n\t"
+            "daddiu $sp,$sp,-240\n\t"
+            "sd $2, 0($sp)\n\t"
+            "sd $3, 8($sp)\n\t"
+            "sd $4, 16($sp)\n\t"
+            "sd $5, 24($sp)\n\t"
+            "sd $6, 32($sp)\n\t"
+            "sd $7, 40($sp)\n\t"
+            "sd $8, 48($sp)\n\t"
+            "sd $9, 56($sp)\n\t"
+            "sd $10, 64($sp)\n\t"
+            "sd $11, 72($sp)\n\t"
+            "sd $12, 80($sp)\n\t"
+            "sd $13, 88($sp)\n\t"
+            "sd $14, 96($sp)\n\t"
+            "sd $15, 104($sp)\n\t"
+            "sd $16, 112($sp)\n\t"
+            "sd $17, 120($sp)\n\t"
+            "sd $18, 128($sp)\n\t"
+            "sd $19, 136($sp)\n\t"
+            "sd $20, 144($sp)\n\t"
+            "sd $21, 152($sp)\n\t"
+            "sd $22, 160($sp)\n\t"
+            "sd $23, 168($sp)\n\t"
+            "sd $24, 176($sp)\n\t"
+            "sd $25, 184($sp)\n\t"
+            "sd $26, 192($sp)\n\t"
+            "sd $27, 200($sp)\n\t"
+            "sd $28, 208($sp)\n\t"
+            "sd $30, 216($sp)\n\t"
+            "sd $31, 224($sp)\n\t"
+            "sd $1, 232($sp)\n\t"
             );
     __asm__ volatile(
-//            "dla $v0, modify_current_key\n\t"
-//            "move $t9,$v0\n\t"
-            "bal modify_current_key\n\t"
+            "jal modify_current_key\n\t"
             );
     __asm__ volatile(
             //"ld $ra, ra_value\n\t"
-	    "ld $v0, 0($sp)\n\t"
-	    "ld $v1, 8($sp)\n\t"
-	    "ld $a0, 16($sp)\n\t"
-	    "ld $a1, 24($sp)\n\t"
-//	    "ld $a2, 32($sp)\n\t"
-	    "ld $a3, 40($sp)\n\t"
-	    "ld $s0, 48($sp)\n\t"
-	    "ld $s1, 56($sp)\n\t"
-	    "ld $s2, 64($sp)\n\t"
-	    "ld $s3, 72($sp)\n\t"
-	    "ld $s4, 80($sp)\n\t"
-	    "ld $s5, 88($sp)\n\t"
-	    "ld $s6, 96($sp)\n\t"
-	    "ld $s7, 104($sp)\n\t"
-	    "ld $gp, 112($sp)\n\t"
-	    "ld $fp, 120($sp)\n\t"
-	    "ld $ra, 128($sp)\n\t"
-	    "daddiu $sp,$sp,136\n\t"
+            "ld $2, 0($sp)\n\t"
+            "ld $3, 8($sp)\n\t"
+            "ld $4, 16($sp)\n\t"
+            "ld $5, 24($sp)\n\t"
+            "ld $6, 32($sp)\n\t"
+            "ld $7, 40($sp)\n\t"
+            "ld $8, 48($sp)\n\t"
+            "ld $9, 56($sp)\n\t"
+            "ld $10, 64($sp)\n\t"
+            "ld $11, 72($sp)\n\t"
+            "ld $12, 80($sp)\n\t"
+            "ld $13, 88($sp)\n\t"
+            "ld $14, 96($sp)\n\t"
+            "ld $15, 104($sp)\n\t"
+            "ld $16, 112($sp)\n\t"
+            "ld $17, 120($sp)\n\t"
+            "ld $18, 128($sp)\n\t"
+            "ld $19, 136($sp)\n\t"
+            "ld $20, 144($sp)\n\t"
+            "ld $21, 152($sp)\n\t"
+            "ld $22, 160($sp)\n\t"
+            "ld $23, 168($sp)\n\t"
+            "ld $24, 176($sp)\n\t"
+            "ld $25, 184($sp)\n\t"
+            "ld $26, 192($sp)\n\t"
+            "ld $27, 200($sp)\n\t"
+            "ld $28, 208($sp)\n\t"
+            "ld $30, 216($sp)\n\t"
+            "ld $31, 224($sp)\n\t"
+            "ld $1, 232($sp)\n\t"
+            "daddiu $sp,$sp,240\n\t"
             );
     __asm__ volatile(
-            // "daddiu  $sp, -0x50\n\t"
-            // "sltiu   $v0, $a1, 0x17\n\t"
-            // "sd      $s0, 0x18($sp)\n\t"
-            // "swc2    $21, 0x13F($sp)\n\t"
-	    "daddiu $sp,$sp,-64\n\t"
-	    "sd $ra,56($sp)\n\t"
-	    "sd $s5,48($sp)\n\t"
-	    "sd $s4,40($sp)\n\t"
+//             "daddiu  $sp, -0x50\n\t"
+//             "sltiu   $v0, $a1, 0x17\n\t"
+//             "sd      $s0, 0x18($sp)\n\t"
+//             "swc2    $21, 0x13F($sp)\n\t"
+                "move    $s1, $a0\n\t"
+                "move    $a0, $s4\n\t"
+                "sd      $s0, 8($sp)\n\t"
+                "move    $s3, $a3\n\t"
+             "nop\n\t"
+             "nop\n\t"
+//	    "daddiu $sp,$sp,-64\n\t"
+//	    "sd $ra,56($sp)\n\t"
+//	    "sd $s5,48($sp)\n\t"
+//	    "sd $s4,40($sp)\n\t"
             "ld $t0,hook_ret_addr\n\t"
             "jr $t0\n\t"
             );
@@ -122,68 +159,57 @@ __attribute__ ((naked)) void my_input_handle_event(void)
 .text:0000000120000C78 08 00 40 00                                   jr      $v0
  * */
 
+/*
+ * input_event
+.text:0000000120000B44 20 00 A2 2C                                   sltiu   $v0, $a1, 0x20
+.text:0000000120000B48 2E 00 40 10                                   beqz    $v0, loc_120000C04
+.text:0000000120000B4C 00 00 00 00                                   nop
+.text:0000000120000B50 28 00 82 DC                                   ld      $v0, 0x28($a0)
+.text:0000000120000B54 16 10 A2 00                                   dsrlv   $v0, $a1
+.text:0000000120000B58 01 00 42 30                                   andi    $v0, 1
+.text:0000000120000B5C 29 00 40 10                                   beqz    $v0, loc_120000C04
+.text:0000000120000B60 00 00 00 00                                   nop
+.text:0000000120000B64 C0 FF BD 67                                   daddiu  $sp, -0x40
+.text:0000000120000B68 B4 00 B3 EB                                   swc2    $19, 0xB4($sp)
+.text:0000000120000B6C E8 01 94 64                                   daddiu  $s4, $a0, 0x1E8
+.text:0000000120000B70 72 00 B1 EB                                   swc2    $17, 0x72($sp)
+.text:0000000120000B74 25 88 80 00                                   move    $s1, $a0           hook 范围在这5句感觉比较好
+.text:0000000120000B78 25 20 80 02                                   move    $a0, $s4
+.text:0000000120000B7C 08 00 B0 FF                                   sd      $s0, 8($sp)
+.text:0000000120000B80 25 98 E0 00                                   move    $s3, $a3
+.text:0000000120000B84 25 90 C0 00                                   move    $s2, $a2
+.text:0000000120000B88 FF 00 B5 EB                                   swc2    $21, 0xFF($sp)
+.text:0000000120000B8C 80 F4 68 0C                                   jal     0x121A3D200
+.text:0000000120000B90 25 80 A0 00                                   move    $s0, $a1
+ */
+
 static int __init mips_inline_hook_init(void)
 {
     printk("%s\n", __func__);
 
-    unsigned long func_addr = kallsyms_lookup_name("input_handle_event");
+    unsigned long func_addr = kallsyms_lookup_name("input_event");
 
     printk("%s input_handle_event addr = 0x%16lx\n", __func__, func_addr);
 
-    int i = 0;
-
-    unsigned char * opcodes = (char *)func_addr;
-    for (; i < 40; i++) {
-        printk("%x ", opcodes[i]);
-    }
-    printk("%s-------原数据打印完毕-----------\n", __func__);
-    // 从 input_handle_event +0x0 处进行hook
-    hook_addr = func_addr + 0;
+    // 从 input_event +0x0 处进行hook
+    hook_addr = func_addr + 48;
     hook_ret_addr = hook_addr + 16;
 
     unsigned long jmp_addr = &my_input_handle_event;
-    jmp_addr += 36;
+    // 这里是否需要再加偏移要看gcc对naked属性是否生效，需要编译出来用gdb查看一下
+    // gcc version 8.3.0 (Uos 8.3.0.6-1+dde) 下 偏移为0
+    jmp_addr += 0;
     printk("%s my_input_handle_event addr = 0x%16lx, jmp_addr = 0x%16lx\n", __func__, &my_input_handle_event, jmp_addr);
 
-    // 经测试不能使用j xxx的结构，这种结构最大跳转只能256M
+    int i = 0;
 
-//    unsigned char hook_opcodes[8] = {0};
-//
-//    unsigned int addr = (unsigned int)&my_input_handle_event;
-//    unsigned int jmp_opcode = ((addr & 0xfffffff) >> 2) | 0x8000000;
-//    hook_opcodes[0] = ((unsigned char *)&jmp_opcode)[3];
-//    hook_opcodes[1] = ((unsigned char *)&jmp_opcode)[2];
-//    hook_opcodes[2] = ((unsigned char *)&jmp_opcode)[1];
-//    hook_opcodes[3] = ((unsigned char *)&jmp_opcode)[0];
-//
-//    printk("%s jmp_opcodes = [%x], hook_opcodes[0] = [%2x], hook_opcodes[1] = [%2x], hook_opcodes[2] = [%2x], hook_opcodes[3] = [%2x]\n",
-//           __func__, jmp_opcode, hook_opcodes[0], hook_opcodes[1], hook_opcodes[2], hook_opcodes[3]);
-//
-//    memcpy(hook_addr, jmp_opcode, 8);
+    unsigned char * opcodes = (unsigned char *)hook_addr;
 
+    // 保存原opcodes
+    for (i = 0; i < 16; i++) {
+        ori_opcodes[i] = opcodes[i];
+    }
 
-
-    // 可能需要构造
-    // lw rt,offset(base)
-    // jr rt
-//    unsigned char hook_opcodes[32] = {0x00, 0x00, 0x0D, 0x3C, 0x00, 0x00, 0xAD, 0x35,
-//                                      0x38, 0x6C, 0x0D, 0x00, 0x00, 0x00, 0xAD, 0x35,
-//                                      0x38, 0x6C, 0x0D, 0x00, 0x00, 0x00, 0xAD, 0x35,
-//                                      0x08, 0x00, 0xA0, 0x01, 0x00, 0x00, 0x00, 0x00};
-//
-//    unsigned short temp;
-//    temp = (unsigned short )func_addr;
-//    *((unsigned short *)&hook_opcodes[20]) = temp;
-//    temp = (unsigned short )((func_addr >> 16) & 0x0000ffffffffffff);
-//    *((unsigned short *)&hook_opcodes[12]) = temp;
-//    temp = (unsigned short )((func_addr >> 32) & 0x00000000ffffffff);
-//    *((unsigned short *)&hook_opcodes[4]) = temp;
-//    temp = (unsigned short )((func_addr >> 48) & 0x000000000000ffff);
-//    *((unsigned short *)&hook_opcodes[0]) = temp;
-
-    // 找到一个这样的特征
-    // 12 C0 02 3C 56 78 42 64                       li      $v0, 0xFFFFFFFFC0127856
-    // 08 00 40 00                                   jr      $v0
     unsigned char hook_opcodes[16] = {0x00, 0x00, 0x0c, 0x3c, 0x00, 0x00, 0x8c, 0x65,
                                       0x08, 0x00, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00};
     unsigned short temp;
@@ -192,32 +218,17 @@ static int __init mips_inline_hook_init(void)
     temp = (unsigned short )((jmp_addr >> 16) & 0x0000ffffffffffff);
     *((unsigned short *)&hook_opcodes[0]) = temp;
 
-    for (i = 0; i < 16; i++) {
-        printk("%x ", hook_opcodes[i]);
-    }
-    printk("\n");
-    printk("%s--------hook_opcodes打印完毕----------\n", __func__);
 
     memcpy(hook_addr, hook_opcodes, 16);
-    for (i = 0; i < 40; i++) {
-        printk("%d\n", opcodes[i]);
-    }
-    printk("\n");
-    printk("%s--------hook_addr打印完毕----------\n", __func__);
 
-    opcodes = (unsigned char *)jmp_addr;
-    for (i = 0; i < 52; i++ ) {
-        printk("%x ", opcodes[i]);
-    }
-    printk("%s--------my_input_handle_event打印完毕----------\n", __func__);
     return 0;
 }
 
 
 static void __exit mips_inline_hook_exit(void)
 {
-
-
+    // 卸载驱动时还原hook
+    memcpy(hook_addr, ori_opcodes, 16);
     printk("%s\n", __func__);
 }
 
