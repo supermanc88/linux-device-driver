@@ -12,4 +12,6 @@ include_directories(
 
 add_definitions(-DMODULE -D__KERNEL__ -D__GNUC__ -DCONFIG_64BIT -DCONFIG_KPROBES)
 
-add_executable(mips_inlinehook mips-inlinehook.c)
+add_subdirectory(userland)
+
+add_executable(mips_inlinehook mips-inlinehook.c recordkey.c hookfunc.c)

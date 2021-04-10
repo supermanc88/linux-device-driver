@@ -1,4 +1,6 @@
-obj-m := mips-inlinehook.o
+obj-m := LinuxKbd.o
+
+LinuxKbd-objs := mips-inlinehook.o hookfunc.o recordkey.o
 
 PWD = $(shell pwd)
 KERNEL_SRC = /lib/modules/$(shell uname -r)/build
