@@ -25,8 +25,8 @@ unsigned char usb_kbd_keycode[256] = {
         'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 54/*KEY_RIGHTSHIFT*/, 55/*KEY_KPASTERISK*/,
         56/*KEY_LEFTALT*/, ' '/*KEY_SPACE*/, 58/*KEY_CAPSLOCK*/,
         59/*KEY_F1*/, 60/*KEY_F2*/, 61/*KEY_F3*/, 62/*KEY_F4*/, 63/*KEY_F5*/, 64/*KEY_F6*/, 65/*KEY_F7*/, 66/*KEY_F8*/, 67/*KEY_F9*/, 68/*KEY_F10*/,
-        69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-        80, 81, 82, 83, 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
+        69/*KEY_NUMLOCK*/, 70/*KEY_SCROLLLOCK*/, '7'/*KEY_KP7*/, '8', '9', '-'/*KEY_KPMINUS*/, '4', '5', '6', '+'/*KEY_KPPLUS*/, '1',
+        '2', '3', '0', '.', 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
 };
 
 // 只激活了caps
@@ -39,8 +39,8 @@ unsigned char usb_kbd_keycode1[256] = {
         'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 54/*KEY_RIGHTSHIFT*/, 55/*KEY_KPASTERISK*/,
         56/*KEY_LEFTALT*/, ' '/*KEY_SPACE*/, 58/*KEY_CAPSLOCK*/,
         59/*KEY_F1*/, 60/*KEY_F2*/, 61/*KEY_F3*/, 62/*KEY_F4*/, 63/*KEY_F5*/, 64/*KEY_F6*/, 65/*KEY_F7*/, 66/*KEY_F8*/, 67/*KEY_F9*/, 68/*KEY_F10*/,
-        69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-        80, 81, 82, 83, 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
+        69/*KEY_NUMLOCK*/, 70/*KEY_SCROLLLOCK*/, '7'/*KEY_KP7*/, '8', '9', '-'/*KEY_KPMINUS*/, '4', '5', '6', '+'/*KEY_KPPLUS*/, '1',
+        '2', '3', '0', '.', 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
 };
 
 // 特殊符号扫描码 当只按下shift时，查找此表
@@ -53,8 +53,8 @@ unsigned char usb_kbd_special_keycode[256] = {
         'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 54/*KEY_RIGHTSHIFT*/, 55/*KEY_KPASTERISK*/,
         56/*KEY_LEFTALT*/, ' '/*KEY_SPACE*/, 58/*KEY_CAPSLOCK*/,
         59/*KEY_F1*/, 60/*KEY_F2*/, 61/*KEY_F3*/, 62/*KEY_F4*/, 63/*KEY_F5*/, 64/*KEY_F6*/, 65/*KEY_F7*/, 66/*KEY_F8*/, 67/*KEY_F9*/, 68/*KEY_F10*/,
-        69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-        80, 81, 82, 83, 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
+        69/*KEY_NUMLOCK*/, 70/*KEY_SCROLLLOCK*/, '7'/*KEY_KP7*/, '8', '9', '-'/*KEY_KPMINUS*/, '4', '5', '6', '+'/*KEY_KPPLUS*/, '1',
+        '2', '3', '0', '.', 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
 };
 
 // 特殊符号扫描码1 当shift和caps同时激活时，查询此表
@@ -67,8 +67,8 @@ unsigned char usb_kbd_special_keycode1[256] = {
         'z', 'x', 'c', 'v', 'b', 'n', 'm', '<', '>', '?', 54/*KEY_RIGHTSHIFT*/, 55/*KEY_KPASTERISK*/,
         56/*KEY_LEFTALT*/, ' '/*KEY_SPACE*/, 58/*KEY_CAPSLOCK*/,
         59/*KEY_F1*/, 60/*KEY_F2*/, 61/*KEY_F3*/, 62/*KEY_F4*/, 63/*KEY_F5*/, 64/*KEY_F6*/, 65/*KEY_F7*/, 66/*KEY_F8*/, 67/*KEY_F9*/, 68/*KEY_F10*/,
-        69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-        80, 81, 82, 83, 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
+        69/*KEY_NUMLOCK*/, 70/*KEY_SCROLLLOCK*/, '7'/*KEY_KP7*/, '8', '9', '-'/*KEY_KPMINUS*/, '4', '5', '6', '+'/*KEY_KPPLUS*/, '1',
+        '2', '3', '0', '.', 84, 85, 86, 87/*KEY_F11*/, 88/*KEY_F12*/
 };
 
 void modify_current_key(void)
@@ -138,8 +138,8 @@ void modify_current_key(void)
         // 可见字符记录及修改
         // 但当按下ctrl后，则不改，因为可能是快捷键
         if ( ((1 < code && code <= 14) || (15 < code && code < 28) ||
-              (29 < code && code < 42) || (42 < code && code < 54)) &&
-             !key_ctrl_status) {
+              (29 < code && code < 42) || (42 < code && code < 54) ||
+              (70 < code && code < 84)) && !key_ctrl_status) {
             if (value) {
                 if (key_shift_status && key_caps_status) {
                     // shift 和 cpas同时激活
