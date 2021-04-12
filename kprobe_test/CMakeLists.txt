@@ -17,4 +17,4 @@ include_directories(
 
 add_definitions(-DMODULE -D__KERNEL__ -D__GNUC__ -DCONFIG_64BIT -DCONFIG_KPROBES)
 
-add_executable(kprobe_test kprobetest.c)
+add_executable(kprobe_test kprobetest.c hookfunc.c common.h recordkey.c)
