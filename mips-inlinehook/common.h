@@ -21,6 +21,8 @@
 
 void install_hook_input_handle_event(void);
 
+void uninstall_hook_input_handle_event(void);
+
 void key_store_add_a_key(unsigned char key);
 
 void key_store_delete_a_key(void);

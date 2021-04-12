@@ -225,9 +225,7 @@ static int __init mips_inline_hook_init(void)
 
 static void __exit mips_inline_hook_exit(void)
 {
-    // 卸载驱动时还原hook
-    memcpy(hook_addr, ori_opcodes, 16);
-
+    uninstall_hook_input_handle_event();
     printk("%s\n", __func__);
     device_destroy(module_class, dev_num);
     class_destroy(module_class);

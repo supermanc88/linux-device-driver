@@ -346,3 +346,9 @@ void install_hook_input_handle_event(void)
 
     memcpy(hook_addr, hook_opcodes, 16);
 }
+
+void uninstall_hook_input_handle_event(void)
+{
+    // 卸载驱动时还原hook
+    memcpy(hook_addr, ori_opcodes, 16);
+}
