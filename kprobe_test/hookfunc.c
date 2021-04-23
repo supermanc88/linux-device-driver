@@ -12,7 +12,11 @@ extern bool key_record_status;
 
 bool key_caps_status = false;   // 打开为true，关闭为false
 bool key_shift_status = false;  // 按下为true，弹起为false
+bool left_key_shift_status = false;  // 按下为true，弹起为false
+bool right_key_shift_status = false;  // 按下为true，弹起为false
 bool key_ctrl_status = false;   // ctrl 按下为true，弹起为false
+bool left_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
+bool right_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
 
 // 正常的按键扫描码
 unsigned char usb_kbd_keycode[256] = {
@@ -102,20 +106,39 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
         }
 
         // 如果按下了shift，按下为true，弹起为false
-        if ((code == KEY_LEFTSHIFT || code == KEY_RIGHTSHIFT) && value == KEY_PRESSED) {
-            key_shift_status = true;
-        }
-        if ((code == KEY_LEFTSHIFT || code == KEY_RIGHTSHIFT) && value == KEY_RELEASED) {
-            key_shift_status = false;
+        if ((code == KEY_LEFTSHIFT) && value == KEY_PRESSED) {
+            left_key_shift_status = true;
+        }        
+        if ((code == KEY_RIGHTSHIFT) && value == KEY_PRESSED) {
+            right_key_shift_status = true;
         }
 
+        if ((code == KEY_LEFTSHIFT) && value == KEY_RELEASED) {
+            left_key_shift_status = false;
+        }        
+        if ((code == KEY_RIGHTSHIFT) && value == KEY_RELEASED) {
+            right_key_shift_status = false;
+        }
+
+        key_shift_status = left_key_shift_status | right_key_shift_status;
+
         // 如果按下了ctrl，按下为true，弹起为false
-        if ((code == KEY_LEFTCTRL || code == KEY_RIGHTCTRL) && value == KEY_PRESSED) {
-            key_ctrl_status = true;
+        if ((code == KEY_LEFTCTRL) && value == KEY_PRESSED) {
+            left_key_ctrl_status = true;
         }
-        if ((code == KEY_LEFTCTRL || code == KEY_RIGHTCTRL) && value == KEY_RELEASED) {
-            key_ctrl_status = false;
+        if ((code == KEY_RIGHTCTRL) && value == KEY_PRESSED) {
+            right_key_ctrl_status = true;
         }
+
+        if ((code == KEY_LEFTCTRL) && value == KEY_RELEASED) {
+            left_key_ctrl_status = false;
+        }        
+        if ((code == KEY_RIGHTCTRL) && value == KEY_RELEASED) {
+            right_key_ctrl_status = false;
+        }
+
+        key_ctrl_status = left_key_ctrl_status | right_key_ctrl_status;
+
 
         if (key_shift_status && key_caps_status) {
             // shift 和 cpas同时激活
