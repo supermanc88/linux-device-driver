@@ -141,8 +141,7 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
             break;
         case KBDDEV_IOC_CLEARKEYS:
             memset(msg_buf, 0, DEV_BUF_SIZE);
-            memset(key_store, 0, 256);
-            key_store_index = -1;
+            key_store_clear();
             printk("%s cmd = [KBDDEV_IOC_CLEARKEYS]\n", __func__);
             break;
         case KBDDEV_IOC_START_RECORD_KEYS:

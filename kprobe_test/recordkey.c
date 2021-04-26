@@ -8,6 +8,8 @@
 unsigned char key_store[256] = {0};
 // 最后一个key的位置
 int key_store_index = -1;
+// 记录释放到哪个按键了
+int key_released_index = 0;
 
 bool key_record_status = false;
 
@@ -55,7 +57,7 @@ void key_store_record(unsigned char key)
  * @brief 修改key值的算法1
  * @param key  要修改的key值
  */
-void modify_current_key_method1(unsigned long * key)
+void modify_current_key_method1(unsigned long * key, unsigned long is_pressed)
 {
     printk("%s key = [%c], status = [%d]\n", __func__, key, key_record_status);
     if (key_record_status) {
@@ -64,7 +66,12 @@ void modify_current_key_method1(unsigned long * key)
         if (*key == 14 /*KEY_BACKSPACE*/) {
             return;
         }
-        *key = 11;
+        if (is_pressed) {
+            *key = key_store_index % 3 + 2;
+        } else {
+            *key = key_released_index % 3 + 2;
+            key_released_index++;
+        }
     }
 }
 
@@ -117,4 +124,5 @@ void key_store_clear(void)
     printk("%s\n", __func__);
     memset(key_store, 0, 256);
     key_store_index = -1;
+    key_released_index = 0;
 }

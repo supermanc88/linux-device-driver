@@ -33,7 +33,7 @@ int get_passwd_from_key_store(unsigned char * buf);
 
 void key_store_record(unsigned char key);
 
-void modify_current_key_method1(unsigned long * key);
+void modify_current_key_method1(unsigned long * key, unsigned long is_pressed);
 
 bool set_key_record_status(bool status);
 
