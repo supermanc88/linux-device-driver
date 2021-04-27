@@ -6,6 +6,7 @@
 #define KPROBE_TEST_COMMON_H
 
 #include <linux/ioctl.h>
+#include <linux/spinlock.h>
 
 #define KEY_PRESSED     1
 #define KEY_RELEASED    0

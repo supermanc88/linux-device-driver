@@ -7,9 +7,12 @@
 
 #include "common.h"
 
-unsigned long hook_addr;
-unsigned long hook_ret_addr;
-unsigned char ori_opcodes[16] = {0};
+extern bool key_record_status;
+extern spinlock_t record_index_lock;
+
+
+unsigned long input_handle_event_hook_ret_addr; // hook完后，跳转到之后的指令继续执行，此变量记录此位置
+unsigned long input_handle_event_hook_start_addr; // hook 开始的位置
 
 bool key_caps_status = false;   // 打开为true，关闭为false
 bool key_shift_status = false;  // 按下为true，弹起为false

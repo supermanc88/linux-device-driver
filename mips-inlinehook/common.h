@@ -8,6 +8,7 @@
 
 #include <linux/ioctl.h>
 #include <linux/kallsyms.h>
+#include <linux/spinlock.h>
 
 #define KEY_PRESSED     1
 #define KEY_RELEASED    0

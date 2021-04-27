@@ -1,5 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/input.h>
+#include <linux/random.h>
 
 #include "common.h"
 
@@ -13,6 +14,42 @@ int key_released_index = 0;
 
 bool key_record_status = false;
 
+extern spinlock_t record_index_lock;
+
+// 改键的扫描码
+unsigned char kbd_keycode_map[256] = {0};
+
+void random_kbd_keycode_map(void)
+{
+	int i = 0;
+	for ( ; i < 256; i++) {
+		kbd_keycode_map[i] = i;
+	}
+	
+	int t = 1000;
+	while(t--) {
+		int j = get_random_int() % 256;
+		int k = get_random_int() % 256;
+        if ( ((1 < kbd_keycode_map[j] && kbd_keycode_map[j] < 14) || (15 < kbd_keycode_map[j] && kbd_keycode_map[j] < 28) ||
+              (29 < kbd_keycode_map[j] && kbd_keycode_map[j] < 42) || (42 < kbd_keycode_map[j] && kbd_keycode_map[j] < 54) ) && 
+			 ((1 < kbd_keycode_map[k] && kbd_keycode_map[k] < 14) || (15 < kbd_keycode_map[k] && kbd_keycode_map[k] < 28) ||
+              (29 < kbd_keycode_map[k] && kbd_keycode_map[k] < 42) || (42 < kbd_keycode_map[k] && kbd_keycode_map[k] < 54) )
+			) {
+			int tmp = kbd_keycode_map[j];
+			kbd_keycode_map[j] = kbd_keycode_map[k];
+			kbd_keycode_map[k] = tmp;
+		
+		}
+
+		// 小键盘单独键盘内混淆
+		j = get_random_int() % 13 + 71;
+		k = get_random_int() % 13 + 71;
+
+		int tmp = kbd_keycode_map[j];
+		kbd_keycode_map[j] = kbd_keycode_map[k];
+		kbd_keycode_map[k] = tmp;
+	}
+}
 
 /**
  * @brief 设置键盘记录状态
@@ -23,6 +60,9 @@ bool set_key_record_status(bool status)
 {
     printk("%s [%d]\n", __func__, status);
     key_record_status = status;
+	if (status) {
+		random_kbd_keycode_map();
+	}
     return key_record_status;
 }
 
@@ -59,19 +99,22 @@ void key_store_record(unsigned char key)
  */
 void modify_current_key_method1(unsigned long * key, unsigned long is_pressed)
 {
-    printk("%s key = [%c], status = [%d]\n", __func__, key, key_record_status);
+    printk("%s key = [%d], status = [%d]\n", __func__, *key, key_record_status);
     if (key_record_status) {
         // 全部修改为按键 0
         // 11是0键的扫描码
         if (*key == 14 /*KEY_BACKSPACE*/) {
             return;
         }
-        if (is_pressed) {
-            *key = key_store_index % 3 + 2;
-        } else {
-            *key = key_released_index % 3 + 2;
-            key_released_index++;
-        }
+        // if (is_pressed) {
+        //     *key = key_store_index % 3 + 2;
+        // } else {
+        //     *key = key_released_index % 3 + 2;
+        //     key_released_index++;
+        // }
+		*key = kbd_keycode_map[*key];
+
+		printk("%s modified key = [%d]\n", __func__, *key);
     }
 }
 

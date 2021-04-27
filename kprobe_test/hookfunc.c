@@ -9,6 +9,7 @@
 #include "common.h"
 
 extern bool key_record_status;
+extern spinlock_t record_index_lock;
 
 bool key_caps_status = false;   // 打开为true，关闭为false
 bool key_shift_status = false;  // 按下为true，弹起为false
@@ -190,14 +191,14 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
 static void handler_post(struct kprobe *p, struct pt_regs *regs,
                          unsigned long flags)
 {
-    printk("%s\n", __func__);
+    // printk("%s\n", __func__);
 }
 
 /*在pre-handler或post-handler中的任何指令或者kprobe单步执行的被探测指令产生了例外时，会调用fault_handler*/
 static int handler_fault(struct kprobe *p, struct pt_regs *regs, int trapnr)
 {
-    printk(KERN_DEBUG "fault_handler: p->addr = 0x%p, trap #%dn",
-            p->addr, trapnr);
+    // printk(KERN_DEBUG "fault_handler: p->addr = 0x%p, trap #%dn",
+    //         p->addr, trapnr);
     /* 不处理错误时应该返回*/
     return 0;
 }

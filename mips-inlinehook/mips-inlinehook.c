@@ -26,6 +26,8 @@ struct cdev * my_dev = NULL;
 struct class * module_class;
 char my_dev_msg_buf[DEV_BUF_SIZE] = {0};
 
+spinlock_t record_index_lock;
+
 loff_t my_dev_llseek(struct file *filp, loff_t offset, int whence)
 {
     printk("%s filp = [%p], offset = [%ld], whence = [%d]\n", __func__, filp, offset, whence);
@@ -145,14 +147,14 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
             printk("%s cmd = [KBDDEV_IOC_CLEARKEYS]\n", __func__);
             break;
         case KBDDEV_IOC_START_RECORD_KEYS:
-            key_record_status = true;
+            set_key_record_status(true);
             if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
                 rc = -EFAULT;
             }
             printk("%s cmd = [KBDDEV_IOC_START_RECORD_KEYS] key_record_status = [%d]\n", __func__, key_record_status);
             break;
         case KBDDEV_IOC_STOP_RECORD_KEYS:
-            key_record_status = false;
+            set_key_record_status(false);
             if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
                 rc = -EFAULT;
             }
@@ -182,6 +184,9 @@ struct file_operations fops = {
 static int __init mips_inline_hook_init(void)
 {
     printk("%s\n", __func__);
+
+	// 初始化用来保护存储按键索引的自旋锁
+	spin_lock_init(&record_index_lock);
 
     // 先创建一个设备，用来应用层程序和驱动模块通信
     int ret = alloc_chrdev_region(&dev_num, 0, DEV_MAX_NUM, "infosec_kbd_pro_dev");
