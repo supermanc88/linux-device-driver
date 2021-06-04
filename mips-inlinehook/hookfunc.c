@@ -13,6 +13,9 @@ extern spinlock_t record_index_lock;
 
 unsigned long input_handle_event_hook_ret_addr; // hook完后，跳转到之后的指令继续执行，此变量记录此位置
 unsigned long input_handle_event_hook_start_addr; // hook 开始的位置
+unsigned long hook_addr;
+unsigned long hook_ret_addr;
+unsigned char ori_opcodes[16] = {0};
 
 bool key_caps_status = false;   // 打开为true，关闭为false
 bool key_shift_status = false;  // 按下为true，弹起为false
@@ -21,6 +24,8 @@ bool right_key_shift_status = false;  // 按下为true，弹起为false
 bool key_ctrl_status = false;   // ctrl 按下为true，弹起为false
 bool left_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
 bool right_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
+
+bool g_can_hook = false; // 用来判断是否可以hook
 
 // 正常的按键扫描码
 unsigned char usb_kbd_keycode[256] = {
@@ -340,6 +345,16 @@ __attribute__ ((naked)) void my_input_handle_event(void)
 void install_hook_input_handle_event(void)
 {
     unsigned long func_addr = kallsyms_lookup_name("input_handle_event");
+	unsigned char sig_code[16] = {0xB0, 0xFF, 0xBD, 0x67, 0x17, 0x00, 0xA2, 0x2C, 0x18, 0x00, 0xB0, 0xFF, 0x3F, 0x01, 0xB5, 0xEB};
+	int j = 0;
+	for ( ; j < 16; j++){
+		if (sig_code[j] != ((unsigned char *)func_addr)[j] ) {
+			g_can_hook = false;
+			return;
+		}
+	}
+
+	g_can_hook = true;
 
     printk("%s input_handle_event addr = 0x%16lx\n", __func__, func_addr);
 
@@ -377,6 +392,8 @@ void install_hook_input_handle_event(void)
 
 void uninstall_hook_input_handle_event(void)
 {
-    // 卸载驱动时还原hook
-    memcpy(hook_addr, ori_opcodes, 16);
+	if (g_can_hook) {
+		// 卸载驱动时还原hook
+		memcpy(hook_addr, ori_opcodes, 16);
+	}
 }

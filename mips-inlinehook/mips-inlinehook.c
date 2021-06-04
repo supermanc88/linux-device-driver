@@ -20,6 +20,8 @@ extern bool key_record_status;
 extern unsigned long hook_addr;
 extern unsigned char ori_opcodes[16];
 
+extern bool g_can_hook;
+
 // 主设备号，在初始化的时候申请
 dev_t dev_num;
 struct cdev * my_dev = NULL;
@@ -132,33 +134,53 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
     switch(cmd) {
         case KBDDEV_IOC_GETKEYS:
         {
-            memcpy(msg_buf, key_store, key_store_index+1);
-            int keys_len = key_store_index + 1;
-            if (copy_to_user((int *)arg, &keys_len, sizeof(int))) {
-                rc = -EFAULT;
-            }
-            printk("%s cmd = [KBDDEV_IOC_GETKEYS] msg_buf = [%s], len = [%d]\n", __func__, msg_buf, keys_len);
+			if (!g_can_hook) {
+				rc = -EINVAL;
+				printk("%s cmd = [KBDDEV_IOC_GETKEYS] no support\n", __func__);
+			} else {
+				memcpy(msg_buf, key_store, key_store_index+1);
+				int keys_len = key_store_index + 1;
+				if (copy_to_user((int *)arg, &keys_len, sizeof(int))) {
+					rc = -EFAULT;
+				}
+				printk("%s cmd = [KBDDEV_IOC_GETKEYS] msg_buf = [%s], len = [%d]\n", __func__, msg_buf, keys_len);
+			}
         }
 
             break;
         case KBDDEV_IOC_CLEARKEYS:
-            memset(msg_buf, 0, DEV_BUF_SIZE);
-            key_store_clear();
-            printk("%s cmd = [KBDDEV_IOC_CLEARKEYS]\n", __func__);
+			if (!g_can_hook) {
+				rc = -EINVAL;
+				printk("%s cmd = [KBDDEV_IOC_CLEARKEYS] no support\n", __func__);
+			} else {
+				memset(msg_buf, 0, DEV_BUF_SIZE);
+				key_store_clear();
+				printk("%s cmd = [KBDDEV_IOC_CLEARKEYS]\n", __func__);
+			}
             break;
         case KBDDEV_IOC_START_RECORD_KEYS:
-            set_key_record_status(true);
-            if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
-                rc = -EFAULT;
-            }
-            printk("%s cmd = [KBDDEV_IOC_START_RECORD_KEYS] key_record_status = [%d]\n", __func__, key_record_status);
+			if (!g_can_hook) {
+				rc = -EINVAL;
+				printk("%s cmd = [KBDDEV_IOC_START_RECORD_KEYS] no support\n", __func__);
+			} else {
+				set_key_record_status(true);
+				if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
+					rc = -EFAULT;
+				}
+				printk("%s cmd = [KBDDEV_IOC_START_RECORD_KEYS] key_record_status = [%d]\n", __func__, key_record_status);
+			}
             break;
         case KBDDEV_IOC_STOP_RECORD_KEYS:
-            set_key_record_status(false);
-            if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
-                rc = -EFAULT;
-            }
-            printk("%s cmd = [KBDDEV_IOC_STOP_RECORD_KEYS] key_record_status = [%d]\n", __func__, key_record_status);
+			if (!g_can_hook) {
+				rc = -EINVAL;
+				printk("%s cmd = [KBDDEV_IOC_STOP_RECORD_KEYS] no support\n", __func__);
+			} else {
+				set_key_record_status(false);
+				if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
+					rc = -EFAULT;
+				}
+				printk("%s cmd = [KBDDEV_IOC_STOP_RECORD_KEYS] key_record_status = [%d]\n", __func__, key_record_status);
+			}
             break;
         default:
             rc = -EFAULT;
