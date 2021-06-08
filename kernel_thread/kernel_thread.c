@@ -10,12 +10,14 @@ struct task_struct *test_task;
 
 static int thread_func(void *data)
 {
-	int a = 1;
+	int a = 0;
 	// 线程框架
 	while (true) {
 		set_current_state(TASK_UNINTERRUPTIBLE);
-		if (kthread_should_stop())
+		if (kthread_should_stop()) {
+			printk("%s\n", __func__);
 			break;
+		}
 
 		if ( a ) {
 			// 条件为真
@@ -25,6 +27,7 @@ static int thread_func(void *data)
 			// 让出CPU运行其他线程，并存指定的时间内重新被调度
 			// 4. 线程函数必须能让出cpu，以便能运行其他线程。
 			// 同时线程函数也必须能重新被调度运行。
+			printk("%s schedule_timeout\n", __func__);
 			schedule_timeout(HZ);
 		}
 	}
