@@ -1,5 +1,5 @@
 obj-m := LinuxKbd.o
-LinuxKbd-objs := kprobetest.o hookfunc.o recordkey.o
+LinuxKbd-objs := kprobetest.o lookupsym.o hookfunc.o recordkey.o skthread.o
 
 PWD = $(shell pwd)
 KERNEL_SRC = /lib/modules/$(shell uname -r)/build

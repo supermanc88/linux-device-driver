@@ -7,6 +7,10 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 
+#include <linux/kthread.h>
+#include <linux/sched.h>
+#include <linux/err.h>
+
 #include "common.h"
 
 #define DEV_MAX_NUM 255
@@ -23,6 +27,10 @@ struct class * module_class;
 char my_dev_msg_buf[DEV_BUF_SIZE] = {0};
 
 spinlock_t record_index_lock;
+
+struct task_struct *auto_send_key_task;
+extern struct completion g_auto_sendkey_completion;
+extern struct dev_and_code d;
 
 loff_t my_dev_llseek(struct file *filp, loff_t offset, int whence)
 {
@@ -128,6 +136,7 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
     switch(cmd) {
         case KBDDEV_IOC_GETKEYS:
         {
+			memset(msg_buf, 0, DEV_BUF_SIZE);
             memcpy(msg_buf, key_store, key_store_index+1);
             int keys_len = key_store_index + 1;
             if (copy_to_user((int *)arg, &keys_len, sizeof(int))) {
@@ -176,7 +185,7 @@ struct file_operations fops = {
         .unlocked_ioctl = my_dev_ioctl,
 };
 
- 
+
 /*初始化内核模块*/
 static int __init kprobe_init(void)
 {
@@ -214,6 +223,10 @@ static int __init kprobe_init(void)
 
     install_hook_input_handle_event();
 
+	init_completion(&g_auto_sendkey_completion);
+
+	auto_send_key_task = kthread_run(auto_sendkey_thread, NULL, "auto_send_key_thread");
+
     return 0;
     error3:
     kfree(my_dev);
@@ -227,6 +240,15 @@ static void __exit kprobe_exit(void)
 {
     uninstall_hook_input_handle_event();
     printk("%s\n", __func__);
+
+	// 关闭掉自动发键线程
+	if (auto_send_key_task) {
+		kthread_stop(auto_send_key_task);
+		auto_send_key_task = NULL;
+		if (!g_auto_sendkey_completion.done) {
+			complete(&g_auto_sendkey_completion);
+		}
+	}
     device_destroy(module_class, dev_num);
     class_destroy(module_class);
     kfree(my_dev);

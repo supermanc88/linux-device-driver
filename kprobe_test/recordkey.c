@@ -25,20 +25,20 @@ void random_kbd_keycode_map(void)
 	for ( ; i < 256; i++) {
 		kbd_keycode_map[i] = i;
 	}
-	
+
 	int t = 1000;
 	while(t--) {
 		int j = get_random_int() % 256;
 		int k = get_random_int() % 256;
         if ( ((1 < kbd_keycode_map[j] && kbd_keycode_map[j] < 14) || (15 < kbd_keycode_map[j] && kbd_keycode_map[j] < 28) ||
-              (29 < kbd_keycode_map[j] && kbd_keycode_map[j] < 42) || (42 < kbd_keycode_map[j] && kbd_keycode_map[j] < 54) ) && 
+              (29 < kbd_keycode_map[j] && kbd_keycode_map[j] < 42) || (42 < kbd_keycode_map[j] && kbd_keycode_map[j] < 54) ) &&
 			 ((1 < kbd_keycode_map[k] && kbd_keycode_map[k] < 14) || (15 < kbd_keycode_map[k] && kbd_keycode_map[k] < 28) ||
               (29 < kbd_keycode_map[k] && kbd_keycode_map[k] < 42) || (42 < kbd_keycode_map[k] && kbd_keycode_map[k] < 54) )
 			) {
 			int tmp = kbd_keycode_map[j];
 			kbd_keycode_map[j] = kbd_keycode_map[k];
 			kbd_keycode_map[k] = tmp;
-		
+
 		}
 
 		// 小键盘单独键盘内混淆
