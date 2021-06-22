@@ -28,8 +28,8 @@ void random_kbd_keycode_map(void)
 	
 	int t = 1000;
 	while(t--) {
-		int j = get_random_int() % 256;
-		int k = get_random_int() % 256;
+		int j = get_random_int() % 54;
+		int k = get_random_int() % 54;
         if ( ((1 < kbd_keycode_map[j] && kbd_keycode_map[j] < 14) || (15 < kbd_keycode_map[j] && kbd_keycode_map[j] < 28) ||
               (29 < kbd_keycode_map[j] && kbd_keycode_map[j] < 42) || (42 < kbd_keycode_map[j] && kbd_keycode_map[j] < 54) ) && 
 			 ((1 < kbd_keycode_map[k] && kbd_keycode_map[k] < 14) || (15 < kbd_keycode_map[k] && kbd_keycode_map[k] < 28) ||
