@@ -30,6 +30,9 @@ char my_dev_msg_buf[DEV_BUF_SIZE] = {0};
 
 spinlock_t record_index_lock;
 
+extern struct timeval pre_key_time;
+extern struct timeval cur_key_time;
+extern unsigned long time_per;
 loff_t my_dev_llseek(struct file *filp, loff_t offset, int whence)
 {
     printk("%s filp = [%p], offset = [%ld], whence = [%d]\n", __func__, filp, offset, whence);
@@ -164,6 +167,8 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
 				printk("%s cmd = [KBDDEV_IOC_START_RECORD_KEYS] no support\n", __func__);
 			} else {
 				set_key_record_status(true);
+			memset(&pre_key_time, 0, sizeof(struct timeval));
+			memset(&cur_key_time, 0, sizeof(struct timeval));
 				if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
 					rc = -EFAULT;
 				}
@@ -176,12 +181,19 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
 				printk("%s cmd = [KBDDEV_IOC_STOP_RECORD_KEYS] no support\n", __func__);
 			} else {
 				set_key_record_status(false);
+			memset(&pre_key_time, 0, sizeof(struct timeval));
+			memset(&cur_key_time, 0, sizeof(struct timeval));
 				if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
 					rc = -EFAULT;
 				}
 				printk("%s cmd = [KBDDEV_IOC_STOP_RECORD_KEYS] key_record_status = [%d]\n", __func__, key_record_status);
 			}
             break;
+		case KBDDEV_IOC_SET_INTERVAL:
+			if (copy_from_user(&time_per, (int *)arg, sizeof(int))) {
+				rc = -EFAULT;
+			}
+			break;
         default:
             rc = -EFAULT;
             printk("%s cmd = [default]\n", __func__);

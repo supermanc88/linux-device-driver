@@ -19,6 +19,7 @@
 #define KBDDEV_IOC_CLEARKEYS                _IO(KBDDEV_IOC_MAGIC, 1)            // 清空记录按键信息的缓冲区
 #define KBDDEV_IOC_START_RECORD_KEYS        _IOR(KBDDEV_IOC_MAGIC, 2, int)      // 开始记录按键信息
 #define KBDDEV_IOC_STOP_RECORD_KEYS         _IOR(KBDDEV_IOC_MAGIC, 3, int)      // 停止记录按键信息
+#define KBDDEV_IOC_SET_INTERVAL	            _IOR(KBDDEV_IOC_MAGIC, 4, int)      // 停止记录按键信息
 
 void install_hook_input_handle_event(void);
 

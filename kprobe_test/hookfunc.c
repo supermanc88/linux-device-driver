@@ -8,6 +8,7 @@
 #include <linux/err.h>
 #include <linux/kallsyms.h>
 #include <linux/delay.h>
+#include <linux/time.h>
 
 #include "common.h"
 
@@ -23,6 +24,12 @@ bool right_key_shift_status = false;  // 按下为true，弹起为false
 bool key_ctrl_status = false;   // ctrl 按下为true，弹起为false
 bool left_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
 bool right_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
+
+
+struct timespec64 pre_key_time = {0};
+struct timespec64 cur_key_time = {0};
+
+unsigned long time_per = 60;
 
 // 正常的按键扫描码
 unsigned char usb_kbd_keycode[256] = {
@@ -166,6 +173,19 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
         if ( ((1 < code && code <= 14) || (15 < code && code < 28) ||
               (29 < code && code < 42) || (42 < code && code < 54) ||
               (70 < code && code < 84)) && !key_ctrl_status) {
+
+			// 超过time_per 时间后，就关闭功能
+			if (pre_key_time.tv_sec == 0) {
+				ktime_get_ts64(&pre_key_time);
+			}
+
+			ktime_get_ts64(&cur_key_time);
+
+			if (! ((cur_key_time.tv_sec - pre_key_time.tv_sec >= 0) && (cur_key_time.tv_sec - pre_key_time.tv_sec <= time_per)) ) {
+				printk("%s timeout! time_per = [%d]\n", __func__, time_per);
+				key_record_status = false;
+			}
+
             if (value) {
                 if (key_shift_status && key_caps_status) {
                     // shift 和 cpas同时激活

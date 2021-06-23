@@ -19,6 +19,7 @@
 extern unsigned char key_store[256];
 extern int key_store_index;
 extern bool key_record_status;
+extern unsigned long g_exit_flag;
 
 // 主设备号，在初始化的时候申请
 dev_t dev_num;
@@ -31,6 +32,10 @@ spinlock_t record_index_lock;
 struct task_struct *auto_send_key_task;
 extern struct completion g_auto_sendkey_completion;
 extern struct dev_and_code d;
+
+extern struct timeval pre_key_time;
+extern struct timeval cur_key_time;
+extern unsigned long time_per;
 
 loff_t my_dev_llseek(struct file *filp, loff_t offset, int whence)
 {
@@ -153,6 +158,8 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
             break;
         case KBDDEV_IOC_START_RECORD_KEYS:
             set_key_record_status(true);
+			memset(&pre_key_time, 0, sizeof(struct timeval));
+			memset(&cur_key_time, 0, sizeof(struct timeval));
             if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
                 rc = -EFAULT;
             }
@@ -160,11 +167,19 @@ long my_dev_ioctl(struct file * filp, unsigned int cmd, unsigned long arg)
             break;
         case KBDDEV_IOC_STOP_RECORD_KEYS:
             set_key_record_status(false);
+			memset(&pre_key_time, 0, sizeof(struct timeval));
+			memset(&cur_key_time, 0, sizeof(struct timeval));
             if (copy_to_user((int *)arg, &key_record_status, sizeof(bool))) {
                 rc = -EFAULT;
             }
             printk("%s cmd = [KBDDEV_IOC_STOP_RECORD_KEYS] key_record_status = [%d]\n", __func__, key_record_status);
             break;
+		case KBDDEV_IOC_SET_INTERVAL:
+			if (copy_from_user(&time_per, (int *)arg, sizeof(int))) {
+				rc = -EFAULT;
+			}
+            printk("%s cmd = [KBDDEV_IOC_SET_INTERVAL] time_per = [%d]\n", __func__, time_per);
+			break;
         default:
             rc = -EFAULT;
             printk("%s cmd = [default]\n", __func__);
@@ -241,14 +256,19 @@ static void __exit kprobe_exit(void)
     uninstall_hook_input_handle_event();
     printk("%s\n", __func__);
 
+	printk("%s auto_send_key_thread = [%p]\n", __func__, auto_send_key_task);
 	// 关闭掉自动发键线程
-	if (auto_send_key_task) {
-		kthread_stop(auto_send_key_task);
-		auto_send_key_task = NULL;
-		if (!g_auto_sendkey_completion.done) {
-			complete(&g_auto_sendkey_completion);
-		}
-	}
+	/** if (auto_send_key_task) { */
+		/** kthread_stop(auto_send_key_task); */
+		/** auto_send_key_task = NULL; */
+	g_exit_flag = 1;
+	printk("%s g_auto_sendkey_completion.done = [%d]\n", __func__, g_auto_sendkey_completion.done);
+		/** if (!g_auto_sendkey_completion.done) { */
+		/**     printk("%s complete\n", __func__); */
+		/**     complete(&g_auto_sendkey_completion); */
+		/** } */
+	complete(&g_auto_sendkey_completion);
+	/** } */
     device_destroy(module_class, dev_num);
     class_destroy(module_class);
     kfree(my_dev);

@@ -10,10 +10,11 @@
 
 #include "common.h"
 
+unsigned long g_exit_flag = 0;
 
 struct completion g_auto_sendkey_completion;
 
-struct dev_and_code d;
+struct dev_and_code d = {0};
 
 typedef void (* input_handle_event_fn)(struct input_dev *dev,
 			       unsigned int type, unsigned int code, int value);
@@ -29,24 +30,51 @@ int auto_sendkey_thread(void *data)
 
 	input_handle_event_fn my_input_handle_event = lookup_symbol_by_name("input_handle_event");
 
-	while (true) {
-		if (kthread_should_stop()) {
-			break;
-		}
+	/** while (true) { */
+	/**     if (kthread_should_stop()) { */
+	/**         printk("%s thread stopped\n", __func__); */
+	/**         break; */
+	/**     } */
+    /**  */
+	/**     printk("%s wait_for_completion\n", __func__); */
+	/**     wait_for_completion(&g_auto_sendkey_completion); */
+    /**  */
+	/**     [> msleep(50); <] */
+    /**  */
+	/**     // 这里发起一个弹起的按键 */
+	/**     [> input_report_key(d.dev, d.code, KEY_RELEASED); <] */
+	/**     if (d.dev != NULL) { */
+	/**         my_input_handle_event(d.dev, EV_KEY, d.code, KEY_RELEASED); */
+	/**         input_sync(d.dev); */
+    /**  */
+	/**         printk("%s auto released code = [%d]\n", __func__, d.code); */
+	/**     } */
+    /**  */
+	/**     printk("%s init_completion\n", __func__); */
+	/**     init_completion(&g_auto_sendkey_completion); */
+	/** } */
 
+	do {
+
+		printk("%s wait_for_completion\n", __func__);
 		wait_for_completion(&g_auto_sendkey_completion);
 
 		/** msleep(50); */
 
 		// 这里发起一个弹起的按键
 		/** input_report_key(d.dev, d.code, KEY_RELEASED); */
-		my_input_handle_event(d.dev, EV_KEY, d.code, KEY_RELEASED);
-		input_sync(d.dev);
+		if (d.dev != NULL) {
+			my_input_handle_event(d.dev, EV_KEY, d.code, KEY_RELEASED);
+			input_sync(d.dev);
 
-		printk("%s auto released code = [%d]\n", __func__, d.code);
+			printk("%s auto released code = [%d]\n", __func__, d.code);
+		}
 
-		init_completion(&g_auto_sendkey_completion);
-	}
+		printk("%s init_completion\n", __func__);
+		/** init_completion(&g_auto_sendkey_completion); */
+		reinit_completion(&g_auto_sendkey_completion);
+	} while(!g_exit_flag);
 
+	printk("%s thread stopped\n", __func__);
 	return 0;
 }

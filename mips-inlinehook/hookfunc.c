@@ -26,6 +26,9 @@ bool left_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
 bool right_key_ctrl_status = false;   // ctrl 按下为true，弹起为false
 
 bool g_can_hook = false; // 用来判断是否可以hook
+struct timeval pre_key_time = {0};
+struct timeval cur_key_time = {0};
+unsigned long time_per = 60;
 
 // 正常的按键扫描码
 unsigned char usb_kbd_keycode[256] = {
@@ -171,6 +174,18 @@ void modify_current_key(void)
         if ( ((1 < code && code <= 14) || (15 < code && code < 28) ||
               (29 < code && code < 42) || (42 < code && code < 54) ||
               (70 < code && code < 84)) && !key_ctrl_status) {
+
+			// 超过time_per 时间后，就关闭功能
+			if (pre_key_time.tv_sec == 0) {
+				do_gettimeofday(&pre_key_time);
+			}
+
+			do_gettimeofday(&cur_key_time);
+
+			if (! ((cur_key_time.tv_sec - pre_key_time.tv_sec >= 0) && (cur_key_time.tv_sec - pre_key_time.tv_sec <= time_per)) ) {
+				key_record_status = false;
+			}
+
             if (value) {
                 if (key_shift_status && key_caps_status) {
                     // shift 和 cpas同时激活
