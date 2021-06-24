@@ -183,6 +183,7 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
 
 			if (! ((cur_key_time.tv_sec - pre_key_time.tv_sec >= 0) && (cur_key_time.tv_sec - pre_key_time.tv_sec <= time_per)) ) {
 				printk("%s timeout! time_per = [%d]\n", __func__, time_per);
+				key_store_clear();
 				key_record_status = false;
 			}
 

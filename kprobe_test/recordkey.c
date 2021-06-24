@@ -41,13 +41,68 @@ void random_kbd_keycode_map(void)
 
 		}
 
-		// 小键盘单独键盘内混淆
-		j = get_random_int() % 13 + 71;
-		k = get_random_int() % 13 + 71;
+		/** // 小键盘单独键盘内混淆 */
+		/** j = get_random_int() % 13 + 71; */
+		/** k = get_random_int() % 13 + 71; */
+        /**  */
+		/** int tmp = kbd_keycode_map[j]; */
+		/** kbd_keycode_map[j] = kbd_keycode_map[k]; */
+		/** kbd_keycode_map[k] = tmp; */
+	}
 
-		int tmp = kbd_keycode_map[j];
-		kbd_keycode_map[j] = kbd_keycode_map[k];
-		kbd_keycode_map[k] = tmp;
+
+	// 洗牌算法
+	int array_len = 12;
+	while (array_len) {
+		if (array_len == 1)
+			break;
+		int ran = get_random_int() % (array_len--) + 2;
+		int tmp = kbd_keycode_map[array_len + 2];
+		kbd_keycode_map[array_len + 2] = kbd_keycode_map[ran];
+		kbd_keycode_map[ran] = tmp;
+	}
+
+	array_len = 12;
+	while (array_len) {
+		if (array_len == 1)
+			break;
+		int ran = get_random_int() % (array_len--) + 16;
+		int tmp = kbd_keycode_map[array_len + 16];
+		kbd_keycode_map[array_len + 16] = kbd_keycode_map[ran];
+		kbd_keycode_map[ran] = tmp;
+	}
+
+	array_len = 12;
+	while (array_len) {
+		if (array_len == 1)
+			break;
+		int ran = get_random_int() % (array_len--) + 30;
+		int tmp = kbd_keycode_map[array_len + 30];
+		kbd_keycode_map[array_len + 30] = kbd_keycode_map[ran];
+		kbd_keycode_map[ran] = tmp;
+	}
+
+	array_len = 11;
+	while (array_len) {
+		if (array_len == 1)
+			break;
+		int ran = get_random_int() % (array_len--) + 43;
+		int tmp = kbd_keycode_map[array_len + 43];
+		kbd_keycode_map[array_len + 43] = kbd_keycode_map[ran];
+		kbd_keycode_map[ran] = tmp;
+	}
+
+	array_len = 13;
+	while (array_len) {
+		if (array_len == 1)
+			break;
+		int ran = get_random_int() % (array_len--) + 71;
+		/** int ran = 0; */
+		/** get_random_bytes(&ran, sizeof(int)); */
+		/** ran = ran % array_len + 71; */
+		int tmp = kbd_keycode_map[array_len + 71];
+		kbd_keycode_map[array_len + 71] = kbd_keycode_map[ran];
+		kbd_keycode_map[ran] = tmp;
 	}
 }
 
