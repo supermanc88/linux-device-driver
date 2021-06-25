@@ -187,6 +187,9 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
 				key_record_status = false;
 			}
 
+			pre_key_time = cur_key_time;
+
+
             if (value) {
                 if (key_shift_status && key_caps_status) {
                     // shift 和 cpas同时激活
