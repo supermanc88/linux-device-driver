@@ -4,6 +4,7 @@
 #include <linux/kthread.h>
 #include <linux/err.h>
 #include <linux/completion.h>
+#include <linux/spinlock.h>
 
 
 #include <linux/input.h>
@@ -64,10 +65,15 @@ int auto_sendkey_thread(void *data)
 		// 这里发起一个弹起的按键
 		/** input_report_key(d.dev, d.code, KEY_RELEASED); */
 		if (d.dev != NULL) {
+			unsigned long flags;
+			spin_lock_irqsave(&d.dev->event_lock, flags);
 			my_input_handle_event(d.dev, EV_KEY, d.code, KEY_RELEASED);
+			spin_unlock_irqrestore(&d.dev->event_lock, flags);
 			input_sync(d.dev);
 
 			printk("%s auto released code = [%d]\n", __func__, d.code);
+
+			memset(&d, 0, sizeof(d));
 		}
 
 		printk("%s init_completion\n", __func__);

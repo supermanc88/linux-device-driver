@@ -167,54 +167,56 @@ static int handler_pre(struct kprobe *p, struct pt_regs *regs)
         /**     printk("%s current press key = [%c], status = [%s]\n", __func__, usb_kbd_keycode[code], value ? "PRESSED":"RELEASED"); */
         /** } */
 
+		if (key_record_status) {
 
-        // 可见字符记录及修改
-        // 但当按下ctrl后，则不改，因为可能是快捷键
-        if ( ((1 < code && code <= 14) || (15 < code && code < 28) ||
-              (29 < code && code < 42) || (42 < code && code < 54) ||
-              (70 < code && code < 84)) && !key_ctrl_status) {
+				// 可见字符记录及修改
+				// 但当按下ctrl后，则不改，因为可能是快捷键
+				if ( ((1 < code && code <= 14) || (15 < code && code < 28) ||
+					  (29 < code && code < 42) || (42 < code && code < 54) ||
+					  (70 < code && code < 84)) && !key_ctrl_status) {
 
-			// 超过time_per 时间后，就关闭功能
-			if (pre_key_time.tv_sec == 0) {
-				ktime_get_ts64(&pre_key_time);
+					// 超过time_per 时间后，就关闭功能
+					if (pre_key_time.tv_sec == 0) {
+						ktime_get_ts64(&pre_key_time);
+					}
+
+					ktime_get_ts64(&cur_key_time);
+
+					if (! ((cur_key_time.tv_sec - pre_key_time.tv_sec >= 0) && (cur_key_time.tv_sec - pre_key_time.tv_sec <= time_per)) ) {
+						printk("%s timeout! time_per = [%d]\n", __func__, time_per);
+						key_store_clear();
+						key_record_status = false;
+					}
+
+					pre_key_time = cur_key_time;
+
+
+					if (value) {
+						if (key_shift_status && key_caps_status) {
+							// shift 和 cpas同时激活
+							key_store_record(usb_kbd_special_keycode1[code]);
+						} else if (!key_shift_status && key_caps_status) {
+							// 只激活了caps
+							key_store_record(usb_kbd_keycode1[code]);
+						} else if (key_shift_status && !key_caps_status) {
+							// 只激活了shift
+							key_store_record(usb_kbd_special_keycode[code]);
+						} else {
+							// 最正常的扫描码，小写无特殊字符
+							key_store_record(usb_kbd_keycode[code]);
+						}
+						modify_current_key_method1(&code, 1);
+
+						d.dev = (struct input_dev *)dev;
+						d.code = code;
+
+					} else {
+						modify_current_key_method1(&code, 0);
+					}
+				}
 			}
+		}
 
-			ktime_get_ts64(&cur_key_time);
-
-			if (! ((cur_key_time.tv_sec - pre_key_time.tv_sec >= 0) && (cur_key_time.tv_sec - pre_key_time.tv_sec <= time_per)) ) {
-				printk("%s timeout! time_per = [%d]\n", __func__, time_per);
-				key_store_clear();
-				key_record_status = false;
-			}
-
-			pre_key_time = cur_key_time;
-
-
-            if (value) {
-                if (key_shift_status && key_caps_status) {
-                    // shift 和 cpas同时激活
-                    key_store_record(usb_kbd_special_keycode1[code]);
-                } else if (!key_shift_status && key_caps_status) {
-                    // 只激活了caps
-                    key_store_record(usb_kbd_keycode1[code]);
-                } else if (key_shift_status && !key_caps_status) {
-                    // 只激活了shift
-                    key_store_record(usb_kbd_special_keycode[code]);
-                } else {
-                    // 最正常的扫描码，小写无特殊字符
-                    key_store_record(usb_kbd_keycode[code]);
-                }
-                modify_current_key_method1(&code, 1);
-
-				d.dev = (struct input_dev *)dev;
-				d.code = code;
-
-				complete(&g_auto_sendkey_completion);
-            } else {
-                modify_current_key_method1(&code, 0);
-            }
-        }
-    }
 
     regs->regs[2] = code;
 
@@ -226,6 +228,9 @@ static void handler_post(struct kprobe *p, struct pt_regs *regs,
                          unsigned long flags)
 {
     // printk("%s\n", __func__);
+	if (key_record_status && d.dev != NULL) {
+		complete(&g_auto_sendkey_completion);
+	}
 }
 
 /*在pre-handler或post-handler中的任何指令或者kprobe单步执行的被探测指令产生了例外时，会调用fault_handler*/
